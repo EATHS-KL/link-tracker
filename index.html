@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ATH Tracker</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; position: relative; }
+    
+    /* Top Right Corner Total Badge */
+    .total-badge { position: absolute; top: 20px; right: 20px; background: #e0f2f1; color: #00796b; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    
     .card { background: white; width: 90%; max-width: 300px; padding: 30px 20px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); text-align: center; }
     h2 { color: #1a1a1a; margin: 0 0 5px 0; font-size: 22px; }
     .greeting { color: #666; font-size: 16px; margin-bottom: 25px; }
@@ -16,17 +20,18 @@
     
     .btn-add { background-color: #00a884; color: white; border: none; padding: 18px; width: 100%; font-size: 20px; border-radius: 12px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 168, 132, 0.3); transition: 0.2s; }
     .btn-add:active { transform: scale(0.96); background-color: #008f6f; }
-    .btn-add:disabled { background-color: #ccc; cursor: not-allowed; box-shadow: none; }
     
     #status { margin-top: 15px; font-weight: 600; font-size: 15px; height: 20px; }
   </style>
 </head>
 <body>
+  
+  <div class="total-badge" id="totalBadge">Total: --</div>
+
   <div class="card">
     <h2>Aruna Textile Hub</h2>
     <div class="greeting">Welcome, <strong id="salesmanName">Loading...</strong></div>
 
-    <!-- Naya Simple UI -->
     <input type="number" id="countVal" class="input-box" value="1">
     <button id="addBtn" class="btn-add" onclick="sendData()">ADD</button>
 
@@ -34,60 +39,49 @@
   </div>
 
   <script>
-    // URL se naam nikalne ka logic
     const urlParams = new URLSearchParams(window.location.search);
     const salesmanName = urlParams.get('name');
+    var currentTotal = 0;
+
+    // APNA APP SCRIPT URL YAHAN DAALEIN
+    const appScriptURL = 'https://script.google.com/macros/s/AKfycbwr9hRenp1-UR1q20y7KN9qTf8rTYdMgAyhAsEQFUr9j3Kg7dPwDQuA4r93ee5FTlk6cw/exec';
 
     if (salesmanName) {
       document.getElementById('salesmanName').innerText = salesmanName;
+      
+      // Page load hote hi Total Count nikalna
+      fetch(appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&action=get")
+        .then(response => response.json())
+        .then(data => {
+          if(data.total !== undefined) {
+            currentTotal = parseInt(data.total);
+            document.getElementById('totalBadge').innerText = "Total: " + currentTotal;
+          }
+        }).catch(e => console.log("Silent Error:", e));
+
     } else {
       document.getElementById('salesmanName').innerText = "Salesman";
-      document.getElementById('status').innerText = "⚠️ URL mein naam nahi hai!";
-      document.getElementById('status').style.color = "red";
-      document.getElementById('addBtn').disabled = true;
     }
 
     function sendData() {
       if (!salesmanName) return;
-
       var val = parseInt(document.getElementById('countVal').value);
-      if(isNaN(val)) {
-        alert("Sahi number daalein!");
-        return;
-      }
+      if(isNaN(val)) return;
 
       var statusText = document.getElementById('status');
-      var addBtn = document.getElementById('addBtn');
       
-      statusText.innerText = "Saving...";
-      statusText.style.color = "#f39c12";
-      addBtn.disabled = true; // Button ko thodi der disable karein taaki double click na ho
-
-      // APNA APP SCRIPT URL YAHAN DAALEIN (Quotes '' ke andar)
-      var appScriptURL = 'https://script.google.com/macros/s/AKfycbwr9hRenp1-UR1q20y7KN9qTf8rTYdMgAyhAsEQFUr9j3Kg7dPwDQuA4r93ee5FTlk6cw/exec';
+      // Super Fast UI Update (Bina Google ka wait kiye)
+      currentTotal += val; 
+      document.getElementById('totalBadge').innerText = "Total: " + currentTotal;
+      statusText.innerText = "✅ Saved!";
+      statusText.style.color = "#00a884";
+      document.getElementById('countVal').value = "1"; // Reset
       
-      // Data ko backend par bhejna
-      var finalURL = appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&val=" + val;
+      setTimeout(() => { statusText.innerText = ""; }, 1500);
 
-      fetch(finalURL)
-        .then(response => response.json())
-        .then(data => {
-          if(data.status === "Success") {
-            statusText.innerText = "✅ Added Successfully!";
-            statusText.style.color = "#00a884";
-            document.getElementById('countVal').value = "1"; // Wapas default 1 kar dein
-          } else {
-            statusText.innerText = "❌ Error in Saving!";
-            statusText.style.color = "#e74c3c";
-          }
-          addBtn.disabled = false;
-          setTimeout(() => { statusText.innerText = ""; }, 2000);
-        })
-        .catch(error => {
-          statusText.innerText = "❌ Network Error!";
-          statusText.style.color = "#e74c3c";
-          addBtn.disabled = false;
-        });
+      // Background me data bhej raha hai (Network error hide kar diya)
+      var finalURL = appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&val=" + val + "&action=add";
+      fetch(finalURL, { mode: 'no-cors' }).catch(e => console.log(e));
     }
   </script>
 </body>

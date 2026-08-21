@@ -50,7 +50,7 @@
       document.getElementById('salesmanName').innerText = salesmanName;
       
       // Page load hote hi Total Count nikalna
-      fetch(appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&action=get")
+      fetch(appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&action=get&t=" + new Date().getTime())
         .then(response => response.json())
         .then(data => {
           if(data.total !== undefined) {
@@ -80,7 +80,7 @@
       setTimeout(() => { statusText.innerText = ""; }, 1500);
 
       // Background me data bhej raha hai (Network error hide kar diya)
-      var finalURL = appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&val=" + val + "&action=add";
+      var finalURL = appScriptURL + "?name=" + encodeURIComponent(salesmanName) + "&val=" + val + "&action=add&t=" + new Date().getTime();
       fetch(finalURL, { mode: 'no-cors' }).catch(e => console.log(e));
     }
   </script>
